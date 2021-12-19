@@ -50,6 +50,7 @@ export default {
 
     return {
       referenceshowed : false,
+      user_id_regex: /\w{68}:/,
     }
 
   },
@@ -131,7 +132,7 @@ export default {
     body: function () {
 
       var bc = this.origin.event.content
-
+      
       if (this.origin.event.content.msgtype == 'm.encrypted') {
         bc = this.decryptEvent
       }
@@ -338,7 +339,8 @@ export default {
       return Promise.resolve()
     },
     menucopy: function () {
-      this.$f.copytext(this.body)
+      let textWithOutUserId = this.body.replace(this.user_id_regex, '')
+      this.$f.copytext(textWithOutUserId)
 
       return Promise.resolve()
     },

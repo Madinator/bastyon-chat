@@ -1,9 +1,8 @@
 <template>
     <label>
-        <label v-for="(elem, index) in message.split(/[\s]/)" v-bind:key="index">  
-            <label class="likelink" v-if="userCalled.test(elem)" @click="core.mtrx.opencontact(getUser(elem.replace(user_id, '')))"> 
-                {{ elem.replace(user_id, '') }} </label>
-            <label v-else> {{ elem }}</label>
+        <label  v-for="(elem, index) in fixedMessage" v-bind:key="index">
+            <label class="likelink" v-if="elem.isUsername" @click="core.mtrx.opencontact(getUser(elem.message))"> {{elem.message}} </label>
+            <label v-else> {{elem.message}} </label>
         </label>
     </label>
 </template>
@@ -22,8 +21,23 @@ export default {
     },
     data() {
         return {
-            user_id: /\w{68}:/,
-            userCalled: /(^|\s)@\w{68}:\w{1,50}/,
+            user_id_regex: /\w{68}:/,
+            user_regex: /(^|\s)@\w{68}:\w{1,50}/,
+        }
+    },
+    computed: {
+        fixedMessage() {
+            let fixedMessage = []
+
+            for(let elem of this.message.split(' ')) {
+                if(this.user_regex.test(elem)) {
+                    fixedMessage.push({message : elem.replace(this.user_id_regex, ''), isUsername : true})
+                }
+                else {
+                    fixedMessage.push({message: elem, isUsername: false})
+                }
+            }
+            return fixedMessage
         }
     },
     methods: {

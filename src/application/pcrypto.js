@@ -242,7 +242,21 @@ var PcryptoRoom = function(pcrypto, chat){
     var ls = {
         set : function(k, v){
             try{
-                localStorage[lcachekey + pcrypto.user.userinfo.id + '-' + k] = JSON.stringify(v)
+                let openRequest = indexedDB.open("store", 1);
+                
+                openRequest.onupgradeneeded = () => {
+                    let key = lcachekey + pcrypto.user.userinfo.id + '-' + k
+                    openRequest.result.createObjectStore('pcrypto', key)
+                }
+
+                openRequest.onsuccess = function() {
+                    let db = openRequest.result;
+                    let transaction = db.transaction("pcrypto", "readwrite")
+                    let pcrypto = transaction.objectStore("pcrypto")
+                    pcrypto.add(v)
+
+                };
+                // localStorage[lcachekey + pcrypto.user.userinfo.id + '-' + k] = JSON.stringify(v)
             }
             catch(e){
                // console.error(e)
@@ -316,6 +330,7 @@ var PcryptoRoom = function(pcrypto, chat){
 
     var eaac = {
         aeskeysls : function(time, block){
+            
 
             if(!time) time = 0
             if(!block) block = pcrypto.currentblock.height
@@ -326,7 +341,8 @@ var PcryptoRoom = function(pcrypto, chat){
 
             //console.log('getusersbytime', getusersbytime(time), users, time, chat.currentState.getStateEvents("m.room.member"))
             //debugger
-            var keys = ls.get(k)
+            // var keys = ls.get(k)
+            var keys = false;
 
 
             if (keys){

@@ -12,6 +12,14 @@
                     spellcheck="true"
                     @focus="focused"
                     @keydown.enter.prevent.exact="send_text_enter"
+                    @keydown.tab.prevent.exact="detect_autocomplete_username()"
+                    @click="detect_username_typing()"
+                    @keyup.35="detect_username_typing()"
+                    @keyup.36="detect_username_typing()"
+                    @keyup.37="detect_username_typing()"
+                    @keyup.38="detect_username_typing()"
+                    @keyup.39="detect_username_typing()"
+                    @keyup.40="detect_username_typing()"
                     @input="textchange"
                     @paste="paste_image"
                     placeholder="Send message"                   
@@ -124,113 +132,19 @@ export default {
             
 		},
 
-        addUsername: function(name) {
-            let element = document.getElementById('textInput');
-            if(element) {
-                let caretPos = element.selectionStart;
-                let atPosition = () => {
-                    for(let i=caretPos; i>=0;i--) {
-                        if(this.text[i] === '@') {
-                            return i;
-                        }
-                    }
-                }
-
-                let slicedAtText = this.text.slice(0, atPosition() + 1);
-                let plusSpaceLength = 1;
-                this.text = slicedAtText + name + ' '
-                + this.text.slice(this.sliceAfterUsernameText(caretPos, slicedAtText.length + name.length) + plusSpaceLength, this.text.length);
-                return this.text.indexOf(' ', caretPos) + plusSpaceLength;
-            }
-            return 0;
-        },
-        sliceAfterUsernameText(caretPos, curNamePos) {
-            return this.text.indexOf(' ', caretPos) > 0 ? this.text.indexOf(' ', caretPos) : curNamePos
-        },
-
-
         focused : function(){
             this.$emit('focused')
         },
 
         textchange : function(e){
             this.text = e.target.value || ''    
+            this.detect_username_typing()
         },
 
-        show_usernames : function(text, caretPosition){
-            
-            for(let i=caretPosition; i>=0 && i<=caretPosition; i--) {
-                if(text[i] === '@' && text[caretPosition] !== '@') {
-                     if(i === 0) {
-                        this.search_for_username(text, i, caretPosition)
-                        break;
-                    }
-                    else if(i > 0 && (text[i-1] === ' ' || text[i-1] === '\n')) {
-                        this.search_for_username(text, i, caretPosition)
-                        break;
-                    }
-                    else {
-                        this.send_empty_array()
-                    }
-                }
-                else {
-                    this.send_empty_array()
-                }
-            }
-        },
-        show_usernames : function(caretPosition, isRightArrow){
-            for(let i=caretPosition; i>=0 && i<=caretPosition; i--) {
-                if(this.text[i] === '@' && this.text[caretPosition] !== '@') {
-                    if(i === 0) {
-                        if(isRightArrow) {
-                            this.setFirstUser(i, caretPosition)
-                            break;
-                        }
-                        else {
-                            this.search_for_username(i, caretPosition)
-                            break;
-                        }
-                    }
-                    else if(i > 0 && (this.text[i-1] === ' ' || this.text[i-1] === '\n')) {
-                        if(isRightArrow) {
-                            this.setFirstUser(i, caretPosition)
-                            break;
-                        }
-                        else {
-                            this.search_for_username(i, caretPosition)
-                            break;
-                        }
-                    }
-                    else {
-                        this.send_empty_array()
-                    }
-                }
-                else {
-                    this.send_empty_array()
-                }
-            }
-        },
-        search_for_username(index, caretPosition) {
-            this.$emit('userSearched' ,this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
-            .filter(word => word.name.indexOf(this.text.slice(index + 1, caretPosition).toLowerCase()) > -1))
-            
-
-            this.savetextinstorage()
-
-        },
-        setFirstUser(index, caretPosition) {
-            let userList = this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
-            .filter(word => word.name.indexOf(this.text.slice(index + 1, caretPosition).toLowerCase()) > -1)
-            this.addUsername(userList[0]?.name || '')
-            
-        },
         savetextinstorage : function(){
             if (this.storagekey){
                 localStorage[this.storagekey] = this.text || ''
             }
-        },
-        send_empty_array(){
-            this.$emit('userSearched', [])
         },
 
         focus(){
@@ -283,10 +197,14 @@ export default {
             else{
                 this.send_text(event)
             }
+
+            this.send_empty_array()
         },
 
         send_text(event) {
-            event.textContent = this.replace_username(this.text).split(',')
+            this.prepare_username_before_send()
+
+            event.textContent = this.text
 
             if(this.text && this.text !== '\n') {
 
@@ -300,40 +218,6 @@ export default {
 
             this.savetextinstorage()
 
-        },
-
-        replace_username(text) {
-            for(let i=text.length; i>=0;i--) {
-               if((text[i] === '@' && i === 0) || (text[i] === '@' && text[i-1] === ' ')) {
-                   for(let j=i; j < text.length; j++) {
-                       if(text[j] === ' ' || text[j] === '\n') {
-                           let userList = this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
-                           .filter(word => word.name.indexOf(text.slice(i + 1, j).toLowerCase()) > -1)
-                           if(userList.length === 1 && userList[0].name.toLowerCase() === text.slice(i + 1, j).toLowerCase()) {
-                                text = this.create_username_message(text, userList, i, j)
-                                break;
-                           }
-                       }
-                       if(j === text.length - 1) {
-                           let userList = this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
-                           .filter(word => word.name.indexOf(text.slice(i + 1, j + 1).toLowerCase()) > -1)
-                           if(userList.length === 1 && userList[0].name.toLowerCase() === text.slice(i + 1, j + 1).toLowerCase()) {
-                               text = this.create_username_message(text, userList, i, j)
-                               break;
-                           }
-                       }
-                   }
-               }
-            }
-            return text;
-        },
-
-        create_username_message(text, userList, i, j){
-            return text.slice(0, i + 1) 
-                    + userList[0].id + ':'
-                    + userList[0].name 
-                    + ' '
-                    + text.slice(j+1, text.length)
         },
 
         insert_emoji(emoji) {
@@ -395,6 +279,108 @@ export default {
                 }).catch(error => console.error('Failed to resize image', error))
             }).catch(error => console.error('Failed to resize image', error))
         },
+
+        detect_autocomplete_username() {
+        
+            let userListElem = document.getElementById('userList')
+            
+            if(userListElem) {
+                let nameOfFirstUser = this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')[0].name
+                this.autocomplete_username(nameOfFirstUser)
+            }
+
+        },
+
+        autocomplete_username(name) {
+            
+            let inputElem = document.getElementById('textInput')
+            let caretPos = inputElem.selectionStart;
+
+            let posOfAT = this.text.lastIndexOf('@', caretPos)  
+            
+            if(this.check_is_before_empty_or_space(posOfAT)) {
+                    
+                let textBeforeAT = this.text.slice(0, posOfAT)
+
+                let spacePosAfterName =  this.text.indexOf(' ', posOfAT)
+
+                let textWithOutName = this.text.slice(spacePosAfterName > -1 
+                ? spacePosAfterName : this.text.length, this.text.length )
+                
+                this.text = textBeforeAT + '@' + name + textWithOutName
+
+                this.send_empty_array()
+                this.setCaretPos(inputElem, textBeforeAT.length + '@'.length + name.length + ' '.length)
+                
+            }
+                  
+        },
+        check_is_before_empty_or_space(posOfAT) {
+            return posOfAT === 0 || /\s/.test( this.text[posOfAT - 1])
+        },
+        send_empty_array(){
+            this.$emit('userSearched', [])
+        },
+        detect_username_typing() {
+            
+            let caretPos = document.getElementById('textInput').selectionStart;
+            for(let i=caretPos - 1; i >= 0 ; i--) {
+                
+                if(this.text[i] === '@' && ( i === 0 || /\s/.test(this.text[i-1]))) {
+                    this.show_matching_usernames(i + 1, caretPos)
+                    return;
+                }
+                
+            }
+            this.send_empty_array()
+
+        },
+        show_matching_usernames(start, end) {                        
+            this.$emit('userSearched' ,this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
+            .filter(word => word.name.indexOf(this.text.slice(start, end).toLowerCase()) > -1))
+        },
+        setCaretPos(elem, caretPos) {
+            
+            if(elem.createTextRange) {
+                var range = elem.createTextRange();
+                range.move('character', caretPos);
+                range.select();
+            }
+            else {
+                if(elem.selectionStart) {
+                    elem.focus();
+                    elem.setSelectionRange(caretPos, caretPos);
+                }
+                else
+                    elem.focus();
+            }
+		},
+        prepare_username_before_send() {
+            var usernamePatt = /(^|\s)@\w{1,50}/igm
+            let match;
+            while (match = usernamePatt.exec(this.text)) {
+
+                let trimmedMatchName = match[0].trim()
+
+                let name = trimmedMatchName.slice(1, trimmedMatchName.length)
+                
+                let userlist = this.get_userlist_by_name(name)
+                
+                if(userlist && name === userlist[0]?.name) {
+                    this.text = this.replaceRange(this.text, 
+                                                  match.index + 1, 
+                                                  usernamePatt.lastIndex, 
+                                                  '@' + userlist[0].id + ':' + userlist[0].name)
+                }
+            }              
+        },
+        get_userlist_by_name(name) {
+            return this.core.mtrx.chatUsersInfo(this.chat.roomId, 'anotherChatUsers')
+            .filter(word => word.name.indexOf(name.toLowerCase()) > -1)
+        },
+        replaceRange(str, start, end, substitute) {
+            return str.substring(0, start) + substitute + str.substring(end);
+        },
     },  
 
     props : {
@@ -437,7 +423,7 @@ export default {
                     }
                 }
             },
-            hidden_previews: null
+            hidden_previews: null,
         }
     },
 
@@ -458,21 +444,6 @@ export default {
         })
 
         this.$refs.textarea.style.height = '26px'
-
-        let _this = this;
-        $("#textInput").bind("keyup click", function(event) {
-            if(event.keyCode === 39) {
-                _this.show_usernames(this.selectionStart, true)
-            }
-            else {
-                _this.show_usernames(this.selectionStart, false)
-                
-            }
-        });
-
-
-        // (event.type === "click" || 
-        //       (event.type === "keyup" && (event.keyCode >= 35 && event.keyCode <= 40)))
 
         
         if (this.storagekey && localStorage[this.storagekey]){

@@ -36,7 +36,7 @@ export default {
     methods : {
         menuItemClick(item) {
             if (this.menu){
-
+            
                 this.last = this.menu
 
                 console.log(item)

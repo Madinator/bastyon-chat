@@ -735,25 +735,9 @@ export default {
 		},
 
 		async pickUser(name) {
-			let caretPos = this.$refs.newinput.addUsername(name)
+			this.$refs.newinput.autocomplete_username(name)
 			await this.setUsersList([])
-			this.setCaretPosition(document.getElementById('textInput'), caretPos)
 
-		},
-		setCaretPosition(elem, caretPos) {
-            if(elem.createTextRange) {
-                var range = elem.createTextRange();
-                range.move('character', caretPos);
-                range.select();
-            }
-            else {
-                if(elem.selectionStart) {
-                    elem.focus();
-                    elem.setSelectionRange(caretPos, caretPos);
-                }
-                else
-                    elem.focus();
-            }
 		},
 	},
 }

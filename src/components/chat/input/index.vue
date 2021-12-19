@@ -7,7 +7,7 @@
         <div class="users" 
                    v-if="usersList && usersList.length"
         >
-          <ul class="list" v-for="(user, index) in usersList" v-bind:key="index">
+          <ul id="userList" class="list" v-for="(user, index) in usersList" v-bind:key="index">
               <li class="element" 
                   @click="pickUser(user.name)">
                   <UserCard :image="user.image" :name="user.name"></UserCard>
