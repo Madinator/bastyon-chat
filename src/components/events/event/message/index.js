@@ -148,7 +148,7 @@ export default {
       return this.decryptEvent.msgtype == 'm.bad.encrypted'
     },
 
-    
+   
 
     textWithoutLinks: function () {
 
@@ -318,7 +318,7 @@ export default {
         sharing.download = true
       }
 
-      sharing.route = 'chat?id=' + this.chat.roomId
+      //sharing.route = 'chat?id=' + this.chat.roomId
       sharing.from = this.userinfo.id
 
       this.$emit('share', sharing)
@@ -421,6 +421,9 @@ export default {
       this.$emit('download')
     },
 
+    decryptagain : function(){
+      this.$emit('decryptagain')
+    },
   
     openImageGallery(msgEvent) {
       this.$emit('openGalleryImg', msgEvent)
